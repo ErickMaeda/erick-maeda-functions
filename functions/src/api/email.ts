@@ -1,11 +1,12 @@
 import { errorResponse, successResponse } from '../utils';
 import { firestore } from 'firebase-admin';
+const functions = require('firebase-functions');
 const express = require('express');
 const cors = require('cors');
 const api = express();
 const sgMail = require('@sendgrid/mail');
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(functions.config().sendgrid.apikey);
 api.use(cors({ origin: true }));
 api.post(
     '/',
