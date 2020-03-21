@@ -11,45 +11,30 @@ api.post(
     '/',
     async (request: any, response: any) => {
         try {
-            const { emailAddress, emailTemplateCode, name, reason, notes } = request.body;
-            if (!emailAddress) {
-                return response.status(500).send(errorResponse("The param emailAddress is required!"));
-            }
+            const { emailTemplateCode } = request.body;
             if (!emailTemplateCode) {
                 return response.status(500).send(errorResponse("The param emailTemplateCode is required!"));
             }
-            if (!name) {
-                return response.status(500).send(errorResponse("The param name is required!"));
-            }
-            if (!reason) {
-                return response.status(500).send(errorResponse("The param reason is required!"));
-            }
-            if (!notes) {
-                return response.status(500).send(errorResponse("The param notes is required!"));
-            }
-    
+
             console.info('Request body -> ', request.body);
             const emailTemplate = await firestore().collection("emailTemplates").doc(emailTemplateCode).get()
             const emailTemplateFirestore = emailTemplate.data();
-            const emailBodyHtml = emailTemplateFirestore?.template
-                .split("{NAME}")
-                .join(name)
-                .split("{REASON}")
-                .join(reason)
-                .split("{NOTES}")
-                .join(notes)
-                .split("{EMAIL}")
-                .join(emailAddress);
 
-            console.info('emailTemplateFirestore', emailTemplateFirestore);
+            let emailBodyHtml = emailTemplateFirestore?.template;
+            emailTemplateFirestore?.params.forEach((element: string) => {
+                emailBodyHtml = emailBodyHtml.split(`{${element}}`).join(request.body[element.toLowerCase()])
+            });
 
-            sgMail.send({
+            const emailOptions = {
                 to: emailTemplateFirestore?.to,
                 from: emailTemplateFirestore?.from,
                 subject: emailTemplateFirestore?.subject,
                 html: emailBodyHtml,
-            });
-            return response.send(successResponse());
+            };
+            console.info('Request Email -> ', emailOptions);
+
+            sgMail.send(emailOptions);
+            return response.send(successResponse({ version: 2 }));
         } catch (error) {
             return response.send(errorResponse(error.message));
         }
