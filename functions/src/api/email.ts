@@ -2,10 +2,10 @@ import { errorResponse, successResponse } from '../utils';
 import { firestore } from 'firebase-admin';
 const express = require('express');
 const cors = require('cors');
-const sgMail = require('@sendgrid/mail');
 const api = express();
+const sgMail = require('@sendgrid/mail');
 
-sgMail.setApiKey("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");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 api.use(cors({ origin: true }));
 api.post(
     '/',
@@ -29,12 +29,15 @@ api.post(
                 to: emailTemplateFirestore?.to,
                 from: emailTemplateFirestore?.from,
                 subject: emailTemplateFirestore?.subject,
-                html: emailBodyHtml,
+                text: emailBodyHtml,
+                html: emailBodyHtml
             };
-            console.info('Request Email -> ', emailOptions);
+            console.info('Request Email Options -> ', emailOptions);
 
-            sgMail.send(emailOptions);
-            return response.send(successResponse({ version: 2 }));
+            const emailResult = await sgMail.send(emailOptions);
+
+            console.info('Request Email Result -> ', emailResult);
+            return response.send(successResponse({ version: 6 }));
         } catch (error) {
             return response.send(errorResponse(error.message));
         }
